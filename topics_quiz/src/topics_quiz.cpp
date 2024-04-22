@@ -54,9 +54,9 @@ private:
     int front_index = (range_size - 1) / 2;
     front_value = msg->ranges[front_index];
 
-    left_value = msg->ranges[angle30_index];
-
     right_value = msg->ranges[range_size - angle30_index];
+
+    left_value = msg->ranges[angle30_index];
     
     // FOR CHECK EACH VALUES
     // RCLCPP_INFO(this->get_logger(), "range value: '%ld'", msg.ranges.size());
