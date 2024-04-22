@@ -57,12 +57,12 @@ private:
     left_value = msg->ranges[angle30_index];
 
     right_value = msg->ranges[range_size - angle30_index];
-
+    
+    // FOR CHECK EACH VALUES
     // RCLCPP_INFO(this->get_logger(), "range value: '%ld'", msg.ranges.size());
-
-    RCLCPP_INFO(this->get_logger(), "Front value: '%f'", front_value);
-    RCLCPP_INFO(this->get_logger(), "Right value: '%f'", right_value);
-    // RCLCPP_INFO(this->get_logger(), "Left value: '%f'\n\n", last_value_left);
+    // RCLCPP_INFO(this->get_logger(), "Front value: '%f'", front_value);
+    // RCLCPP_INFO(this->get_logger(), "Right value: '%f'", right_value);
+    // RCLCPP_INFO(this->get_logger(), "Left value: '%f'\n\n", left_value);
   }
 
   rclcpp::TimerBase::SharedPtr timer_;
