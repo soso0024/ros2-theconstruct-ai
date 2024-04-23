@@ -1,4 +1,4 @@
-# ROS2 The Construcr Ai
+# ROS2 The Construcr AI
 
 ## <a href="https://github.com/soso0024/ros2-theconstruct-ai/tree/main/topics_quiz"> Topics Quiz </a>
 
