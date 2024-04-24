@@ -1,0 +1,7 @@
+string command_messieurs    # Signal to define the movement
+                            # "Bonjour" to make the front movement of robot.
+                            # "Salue" to make the back movement of robot. 
+                            # "Stop Messieurs" to make the robot stop the movement.
+
+---
+bool success  # Did it achieve it?
