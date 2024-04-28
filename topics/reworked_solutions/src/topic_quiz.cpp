@@ -17,15 +17,11 @@ public:
     publisher_ = this->create_publisher<Twist>("cmd_vel", 10);
     subsc_ = this->create_subscription<LaserScan>(
         "scan", 10, std::bind(&AvoidRobot::avoid_callback, this, _1));
-
-    // timer_ = this->create_wall_timer(
-    //     500ms, std::bind(&AvoidRobot::avoid_callback, this));
   }
 
 private:
   rclcpp::Publisher<Twist>::SharedPtr publisher_;
   rclcpp::Subscription<LaserScan>::SharedPtr subsc_;
-  // rclcpp::TimerBase::SharedPtr timer_;
 
   void avoid_callback(const LaserScan::SharedPtr msg) {
     size_t size_ranges = msg->ranges.size();
