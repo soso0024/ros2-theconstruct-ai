@@ -21,9 +21,9 @@ public:
   }
 
 private:
-  void topic_callback(const Int32::SharedPtr msg) {
-    RCLCPP_INFO(this->get_logger(), "I heard: '%d'", msg->data);
-  }
+  // void topic_callback(const Int32::SharedPtr msg) {
+  //   RCLCPP_INFO(this->get_logger(), "I heard: '%d'", msg->data);
+  // }
 
   void vel_callback(const Twist::ConstSharedPtr msg) {
     RCLCPP_INFO(this->get_logger(), "x vel: '%f'", msg->linear.x);
