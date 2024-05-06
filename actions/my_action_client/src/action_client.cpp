@@ -95,6 +95,7 @@ private:
       return;
     case rclcpp_action::ResultCode::CANCELED:
       RCLCPP_ERROR(this->get_logger(), "Goal was canceled");
+      return;
     default:
       RCLCPP_ERROR(this->get_logger(), "Unknown result code");
       return;
