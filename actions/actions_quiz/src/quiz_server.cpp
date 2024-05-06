@@ -36,8 +36,8 @@ public:
         std::bind(&QuizServer::handle_cancel, this, _1),
         std::bind(&QuizServer::handle_accepted, this, _1));
 
-    publisher_vel_ =
-        this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+    // publisher_vel_ =
+    //     this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
 
     publisher_dis_ =
         this->create_publisher<std_msgs::msg::Float64>("total_distance", 10);
@@ -48,9 +48,19 @@ public:
 
 private:
   rclcpp_action::Server<Distance>::SharedPtr action_server_;
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_vel_;
+  // rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_vel_;
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr publisher_dis_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr subscriber_odom_;
+
+  double previous_x_ = 0.0;
+  double previous_y_ = 0.0;
+  double latest_x_ = 0.0;
+  double latest_y_ = 0.0;
+  double current_x_ = 0.0;
+  double current_y_ = 0.0;
+  double total_distance_ = 0.0;
+
+  bool initialized_ = false;
 
   rclcpp_action::GoalResponse
   handle_goal(const rclcpp_action::GoalUUID &uuid,
@@ -74,23 +84,25 @@ private:
         .detach();
   }
 
-  double last_x_, last_y_;
-  bool initialized_ = false;
-  double total_distance_ = 0.0;
-
   void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
-    double current_x = msg->pose.pose.position.x;
-    double current_y = msg->pose.pose.position.y;
+    this->current_x_ = msg->pose.pose.position.x;
+    this->current_y_ = msg->pose.pose.position.y;
 
-    if (initialized_) {
-      double dist_increment =
-          sqrt(pow(current_x - last_x_, 2) + pow(current_y - last_y_, 2));
-      total_distance_ += dist_increment;
-    } else {
+    if (!this->initialized_) {
+      this->previous_x_ = this->current_x_;
+      this->previous_y_ = this->current_y_;
       initialized_ = true;
     }
-    last_x_ = current_x;
-    last_y_ = current_y;
+
+    this->latest_x_ = this->current_x_;
+    this->latest_y_ = this->current_y_;
+
+    double dist_increment =
+        sqrt(pow(latest_x_ - previous_x_, 2) + pow(latest_y_ - previous_y_, 2));
+    this->total_distance_ += dist_increment;
+
+    previous_x_ = current_x_;
+    previous_y_ = current_y_;
   }
 
   void execute(const std::shared_ptr<GoalHandleMove> goal_handle) {
@@ -98,7 +110,7 @@ private:
     const auto goal = goal_handle->get_goal();
     auto feedback = std::make_shared<Distance::Feedback>();
     auto result = std::make_shared<Distance::Result>();
-    auto move = geometry_msgs::msg::Twist();
+    // auto move = geometry_msgs::msg::Twist();
     rclcpp::Rate loop_rate(1);
 
     for (int i = 0; (i < goal->seconds) && rclcpp::ok(); i++) {
@@ -110,12 +122,9 @@ private:
         return;
       }
 
-      move.linear.x = 0.5;
-      publisher_vel_->publish(move);
-
-      // Have to Change
-      //   total_distance_ += move.linear.x;
-      //   feedback->current_dist = move.linear.x;
+      //   move.linear.x = 0.5;
+      //   move.angular.z = 0.3;
+      //   publisher_vel_->publish(move);
 
       std_msgs::msg::Float64 distance_msg;
       distance_msg.data = total_distance_;
@@ -130,41 +139,14 @@ private:
     if (rclcpp::ok()) {
       result->status = true;
       result->total_dist = total_distance_;
-      move.linear.x = 0.0;
-      publisher_vel_->publish(move);
+      //   move.linear.x = 0.0;
+      //   move.angular.z = 0.0;
+      //   publisher_vel_->publish(move);
       goal_handle->succeed(result);
       RCLCPP_INFO(this->get_logger(), "Goal succeeded");
     }
   }
 };
-
-/*
-< To Do >
-
-ロボットの初期座標を０基準として，そのからの時間経過での移動距離を表示するようにする．
-現状は下記のような結果となっている
-
-user:~/ros2_ws$ ros2 action send_goal -f /distance_as
-actions_quiz_msg/action/Distance "{seconds: 3}" Waiting for an action server to
-become available... Sending goal: seconds: 3
-
-Goal accepted with ID: 9ae811527158423da6858d82bd1c178f
-
-Feedback:
-    current_dist: 9.27453502506758
-
-Feedback:
-    current_dist: 9.772634628826907
-
-Feedback:
-    current_dist: 10.279983609530971
-
-Result:
-    status: true
-total_dist: 10.786844103707107
-
-Goal finished with status: SUCCEEDED
-*/
 
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);

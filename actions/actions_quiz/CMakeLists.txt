@@ -29,8 +29,12 @@ endif()
 add_executable(quiz_server_node src/quiz_server.cpp)
 ament_target_dependencies(quiz_server_node rclcpp rclcpp_action actions_quiz_msg geometry_msgs std_msgs nav_msgs)
 
+add_executable(quiz_client_node src/quiz_client.cpp)
+ament_target_dependencies(quiz_client_node rclcpp rclcpp_action actions_quiz_msg)
+
 install(TARGETS
    quiz_server_node
+   quiz_client_node
    DESTINATION lib/${PROJECT_NAME}
 )
 
