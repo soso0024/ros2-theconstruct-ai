@@ -101,8 +101,8 @@ private:
         sqrt(pow(latest_x_ - previous_x_, 2) + pow(latest_y_ - previous_y_, 2));
     this->total_distance_ += dist_increment;
 
-    previous_x_ = current_x_;
-    previous_y_ = current_y_;
+    this->previous_x_ = this->current_x_;
+    this->previous_y_ = this->current_y_;
   }
 
   void execute(const std::shared_ptr<GoalHandleMove> goal_handle) {
