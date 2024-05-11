@@ -1,6 +1,7 @@
 #include "geometry_msgs/msg/detail/twist__struct.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/timer.hpp"
@@ -26,7 +27,7 @@ public:
         std::bind(&WallFollow::scan_callback, this, _1));
 
     timer_ = this->create_wall_timer(
-        50ms, std::bind(&WallFollow::timer_callback, this));
+        200ms, std::bind(&WallFollow::timer_callback, this));
 
     this->laser_left = 0.0;
     this->laser_right = 0.0;
@@ -41,49 +42,47 @@ private:
   float laser_left, laser_right, laser_forward;
 
   void scan_callback(const LaserScan::SharedPtr msg) {
-    this->laser_left = msg->ranges[180];
-    this->laser_right = msg->ranges[540];
-    this->laser_forward = msg->ranges[360];
+    int size_ranges = msg->ranges.size();
 
-    // RCLCPP_INFO(this->get_logger(), "[LEFT] = '%f'", this->laser_left);
-    // RCLCPP_INFO(this->get_logger(), "[RIGHT] = '%f'", this->laser_right);
-    // RCLCPP_INFO(this->get_logger(), "[FORWARD] = '%f'", this->laser_forward);
+    int left_angle30_idx = (size_ranges - 1) * 20 / 180;
+    int right_angle30_idx = (size_ranges - 1) - left_angle30_idx;
+    int forward_idx = (size_ranges - 1) / 2;
+
+    // RCLCPP_INFO(this->get_logger(), "size_ranges: '%ld'", size_ranges);
+
+    this->laser_left = msg->ranges[left_angle30_idx];
+    this->laser_right = msg->ranges[right_angle30_idx];
+    this->laser_forward = msg->ranges[forward_idx];
+
+    RCLCPP_INFO(this->get_logger(), "[LEFT] = '%f'", this->laser_left);
+    RCLCPP_INFO(this->get_logger(), "[RIGHT] = '%f'", this->laser_right);
+    RCLCPP_INFO(this->get_logger(), "[FORWARD] = '%f'", this->laser_forward);
   }
 
   void timer_callback() {
-    if (this->laser_left <= 0.2) {
-      this->twist_msg.angular.z = 0.3; // rotate direction of clock (Right): '+'
+    if ((this->laser_right >= 0.3) && (this->laser_left >= 0.2)) {
+      this->twist_msg.angular.z = 0.1;
       this->twist_msg.linear.x = 0.1;
-      RCLCPP_INFO(this->get_logger(), "Turn Right 1!");
-    } else if (this->laser_right <= 0.2) {
+      RCLCPP_INFO(this->get_logger(), "Robot's choise: Turn Left\n");
+    } else if (this->laser_left <= 0.2) {
       this->twist_msg.angular.z = -0.3;
-      this->twist_msg.linear.x = 0.1;
-      RCLCPP_INFO(this->get_logger(), "Turn Left 2!");
-    } else if (this->laser_left >= 0.3) {
-      this->twist_msg.angular.z = 0.3;
-      this->twist_msg.linear.x = 0.1;
-      RCLCPP_INFO(this->get_logger(), "Turn Right 3!");
-    } else if (this->laser_right >= 0.3) {
-      this->twist_msg.angular.z = -0.3;
-      this->twist_msg.linear.x = 0.1;
-      RCLCPP_INFO(this->get_logger(), "Turn Left 4!");
-    } else if (this->laser_forward <= 0.5) {
-      this->twist_msg.angular.z = 0.3;
-      this->twist_msg.linear.x = 0.1;
-      RCLCPP_INFO(this->get_logger(), "Turn Right 5!");
+      this->twist_msg.linear.x = 0.0;
+      RCLCPP_INFO(this->get_logger(), "Robot's choise: Turn Right\n");
     } else {
-      this->twist_msg.linear.x = 0.1;
-      RCLCPP_INFO(this->get_logger(), "Move Straight");
+      this->twist_msg.linear.x = 0.05;
+      RCLCPP_INFO(this->get_logger(), "Robot's choise: Move\n");
     }
+
+    /*
+    <To Do>
+    - 壁が左側にある場合の時の実装
+    - 前方に壁がある場合（下記参照）
+    - そのためには、前方のレーザー光線を使用することをお勧めします。その光線によって測定された距離が0.5mより短い場合は、ロボットを左に高速ターンさせます（同時に前進します）。
+    */
 
     pub_->publish(twist_msg);
   }
 };
-
-/*
-To Do
-ほぼずっとTurn Left 2が実行される原因を調べる
-*/
 
 int main(int argc, char *argv[]) {
   rclcpp::init(argc, argv);
@@ -135,8 +134,8 @@ float32 angle_max            # end angle of the scan [rad]
 float32 angle_increment      # angular distance between measurements [rad]
 
 float32 time_increment       # time between measurements [seconds] - if your
-scanner # is moving, this will be used in interpolating position # of 3d points
-float32 scan_time            # time between scans [seconds]
+scanner # is moving, this will be used in interpolating position # of 3d
+points float32 scan_time            # time between scans [seconds]
 
 float32 range_min            # minimum range value [m]
 float32 range_max            # maximum range value [m]
@@ -144,6 +143,6 @@ float32 range_max            # maximum range value [m]
 float32[] ranges             # range data [m]
                              # (Note: values < range_min or > range_max should
 be discarded) float32[] intensities        # intensity data [device-specific
-units].  If your # device does not provide intensities, please leave # the array
-empty.
+units].  If your # device does not provide intensities, please leave # the
+array empty.
 */
